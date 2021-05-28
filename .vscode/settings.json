@@ -1,0 +1,8 @@
+{
+  "python.pythonPath": "C:\\Users\\Enochpark89\\.virtualenvs\\2021_python-django_airbnb-nRT1wxQ2\\Scripts\\python.exe",
+  "python.linting.flake8Enabled": false,
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.formatting.provider": "black",
+  "python.linting.flake8Args": ["--max-line-length=88"]
+}
