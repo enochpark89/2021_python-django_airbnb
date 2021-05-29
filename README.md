@@ -88,5 +88,40 @@ _Always check whether you are running the server_
 -  Django comes with migration function. This in DB it is changing the shape of the DB from one to the other.
 -  _For example, if we run python manage.py makemigrations_, it will look for models.
 -  Therefore, because of this function in Django, you don't need to learn SQL.
-- Django already applied 17 migrations after running *python manage.py migration*
+-  Django already applied 17 migrations after running _python manage.py migration_
 
+## 1.6 Django Application
+
+-  Before you start, we need to think about how are we going to organize our application.
+-  Project is a groups of apps. Apps are a group of functions.
+-  When you visit AirBnB site, you see that there are multiple functions that you need to create.
+-  The word room should be a group.
+-  You notice that rooms also have reviews.
+-  you can review a room so it is related.
+   -  rooms folder: handling room search, room reservation
+   -  user folder: login,
+-  you should have one big application. You have to divide and conquer.
+-  the functions should be simplified and divided.
+-  Once you make a seperate applications, we can put all things together and import it in the configuration.
+-  We need to know what application to create. The rule of thumb is that you should be able to describe an application with a simple term.
+
+## 1.7 Create App
+
+-  **django-admin startapp** will start an app.
+
+Steps:
+
+1. Create Applications: django-admin startapp rooms > The rooms folder gets created.
+
+-  users
+-  lists
+-  reservations
+-  reviews
+-  conversations
+
+2. Each folder is like its own application.
+3. We need to create User's application for them to work on their own profile.
+4. Applications come with file. The names of these files must stay what they are. You are using a framework, not a library. With a framwork, you play by the rules of a framwork. With React, you can do whatever you want. But for Django, you have to follow its rule.
+- For example, if you want to change the URL, Django will look for the change in certain files. 
+- even all the variables in the settings are configured in certain ways for a reason. DO NOT TOUCH
+5. Though the names in the application folders are not modifiable, you can create a new folder for your own sake. For example, we are going to create urls.py file to keep track of all URLS. 
