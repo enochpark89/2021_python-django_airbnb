@@ -665,9 +665,83 @@ class List(core_models.TimeStampedModel):
 
 ## 4.3 Conversations
 
--  Start a conversations app **Run django-admin startapp conversations**
+-  Start a conversations app Run **django-admin startapp conversations**
 -  Conversations contains:
    -  trip model
    -  chatbox type conversation bubble between two users.
    -  participations.
-   -
+
+(Skipping the model setup as it is similar with other apps that we set up previously)
+
+# 5.0 Room Admin
+
+## 5.1 Room Admin Panel - Search
+
+-  Create list_display from the room/admin.py
+
+```py
+    list_display = (
+        "name",
+        "country",
+        "city",
+        "price",
+        "guests",
+        "beds",
+        "bedrooms",
+        "baths",
+        "check_in",
+        "check_out",
+        "instant_book",
+    )
+```
+
+-  On Airbnb, when you write a city, and it shows recommendations that the system guess what the users wrote.
+
+-  Within admin, there are many things that you can add. (_Please refer to the Django project docs_)
+   -  ModelAdmins option
+      -  actions
+      -  empty_value_display
+      -  fields: hide the fields
+      -  exlude:
+      -  search_fields: enable a searchbox, with fields as arguments. It uses a regular expression to specify the search method and results.
+      ```
+      # search for keyword that has exact (=) city name and startswith(^)host_username
+        search_fields = ("=city", "^host__username")
+      ```
+
+## 5.2 Room Admin Panel -
+
+-  **filter_horizontal** works with many-to-many relationship.
+-  Use _classes collapse_ to render collapsable sections.
+-  **Ordering**: tell the admin how to order the list. You can order by different columns.
+
+## 5.3 Custom Admin Functions
+
+-  You can add columns by adding to list_display.
+-  After adding another column, you can add another class within the admin.py. as below
+-  Whatever you return in the class, the value will be shown as a field value. (column value.)
+
+```py
+def count_amenities(self, obj):
+        return obj.amenities.count()
+```
+
+-  we can even change the column name by stating below
+
+```
+count_amenities.short_desciption = "new name of the column"
+```
+
+-  we can explore what kind of methods and properties **obj** has.
+-  obj.amenities.all() contains the <QuerySet>
+
+# 6.0 Models and Querysets
+
+## 6.1 Managers and Queryset
+
+-  With the Queryset and the object value you can create many columns that calculate the give stats of the models.
+-  Activate the bubble > pipenv shell
+-  Run _Python manage.py shell_: to access the Django objects.
+-  User > <class 'users.models.User'>
+-  dir(User)
+-  **vars returns the **dict** attribute for a module, class, instance or any other object with a **dict** attribute**
