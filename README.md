@@ -742,6 +742,90 @@ count_amenities.short_desciption = "new name of the column"
 -  With the Queryset and the object value you can create many columns that calculate the give stats of the models.
 -  Activate the bubble > pipenv shell
 -  Run _Python manage.py shell_: to access the Django objects.
--  User > <class 'users.models.User'>
--  dir(User)
--  **vars returns the **dict** attribute for a module, class, instance or any other object with a **dict** attribute**
+
+_How do you get the object from the DB?_
+
+-  Terms:
+   Vars:
+   _Def: vars returns the dict attribute for a module, class, instance or any other object with a dict attribute_
+   Dir:
+   _Def: dir return the list of names in the current local scope._
+
+-  These two functions are needed to access the DB in Django.
+
+Steps:
+_Tip: CTRL+L cleans the shell terminal._
+
+1. Vars(User):
+   Uses:
+   AbstractUser > AbstractBaseUser >
+   Models
+
+2. User.objects > returns <...UserManager> - UserManager get elements from the DB without using SQL.
+
+3. If you want to all the users in DB, Run _User.objects.all()_ > returns a QuerySets.
+
+_QuerySets:_ List of objects.
+
+4. Run _all.user.filter(superhost=true)_, returns filtered user within the condition stated.
+
+-  Ascending(), descending()
+-  reverse() etc...
+
+5. you can create a model and put in the queried object into the model that you created
+
+_.get returns one object_
+
+```
+>>> e = Entry.objects.get(id=2)
+>>> e.blog # Returns the related Blog object.
+```
+
+-  Remeber the users that have the foreign keys.
+
+   -  Room > Foreign key > User
+
+-  We can access the room from the User model using _sets_
+-  Element > Foreign key points to another element.
+-  The one that is being pointed can access the pointer using a foreign key.
+
+## 6.1 Django ORM and Sets
+
+-  You can access the DB using the sets as well as below
+   ex1:
+
+```
+itnico.review_set.all()
+```
+
+-  _related names_: name can be created to refer to sets.
+
+-  You can set the _related_name_ field within the Foreign.keyed model and use that name to call the sets.
+
+-  One object access to foreign keys.
+
+-  On many-to-many relationship, you can use .get() to access.
+
+-  The more you make Django, you will understand how the objects work and what it does to access the DB.
+
+## 6.2 Many-to-Many Sets
+
+-  Related_names are for the target.
+-
+
+## 6.3 Finish Room Admin
+
+rooms/admin.py
+
+-  Create to count photos.
+
+```python
+""" Item Admin Definition"""
+    list_display = ("name", "used_by")
+
+    def used_by(self, obj):
+        return obj.rooms.count()
+
+```
+
+-
