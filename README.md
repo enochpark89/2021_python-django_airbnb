@@ -828,4 +828,381 @@ rooms/admin.py
 
 ```
 
--
+# 7. More Admins
+
+# 7.0 Review Admin; Room Average
+
+There are more tasks need to be accomplished for admins.
+
+Steps:
+
+1. On Users, add list_filter that checks for a super user as below:
+
+users/admin.py:
+
+```py
+    list_filter = UserAdmin.list_filter + ("superhost",)
+
+    list_display = (
+        "username",
+        "first_name",
+        "last_name",
+        "email",
+        "is_active",
+        "language",
+        "currency",
+        "superhost",
+        "is_staff",
+        "is_superuser",
+    )
+```
+
+-  With the is_superuser, we may check whether the user is a super user or not.
+
+2. Review > Add average
+
+-  Usually for reviews, it has average of ratings that people submit.
+
+-  Add below to reviews/models.py
+
+```py
+# Takes average of 6 variables in reviews.
+def rating_average(self):
+    avg = (
+        self.accuracy
+        + self.communication
+        + self.cleanliness
+        + self.location
+        + self.check_in
+        + self.value
+    ) / 6
+    return round(avg, 2)
+
+rating_average.short_description = "Avg."
+```
+
+-  Add this value to the list_display to show it on the chart.
+
+-  We put it in the model because we want to have it on both front and back end.
+
+3. Rooms > Get total reviews > Get an average.
+
+```py
+def total_rating(self):
+all_reviews = self.reviews.all()
+all_ratings = 0
+
+for review in all_reviews:
+    all_ratings += review.rating_average()
+return all_ratings / len(all_reviews)
+```
+
+# 7.1 Reservations Admin
+
+1. Create Check-in an out function
+
+-  Import timezone from django.util.
+-  Create in_progress() and is_finished() functions that compare the time now with check_in and check_out time to show a boolean value.
+
+reservations/models.py
+
+```py
+# Get time now and if now is in between check_in and check_out time, return true for in_progess.
+def in_progress(self):
+    now = timezone.now().date()
+    return now > self.check_in and now < self.check_out
+
+in_progress.boolean = True
+
+def is_finished(self):
+    now = timezone.now().date()
+    return now > self.check_out
+
+is_finished.boolean = True
+```
+
+# 7.2 Conversions, Lists, Reservations Admin
+
+-  Count the number of stays
+
+Steps:
+
+1. Update lists app:
+
+lists/models.py
+
+```py
+def count_rooms(self):
+    return self.rooms.count()
+
+count_rooms.short_description = "Number of Rooms"
+```
+
+lists/admin.py
+
+```py
+list_display = ("name", "user", "count_rooms")
+
+search_fields = ("name",)
+
+filter_horizontal = ("rooms",)
+```
+
+2. Create messages and participants counts.
+   conversations/admin.py:
+
+```py
+    """ Message Admin Definition """
+
+    list_display = ("__str__", "created")
+
+
+@admin.register(models.Conversation)
+class ConversationAdmin(admin.ModelAdmin):
+
+    """ Conversation Admin Definition """
+
+    list_display = ("__str__", "count_messages", "count_participants")
+```
+
+## 7.3 User Upload
+
+-  When the admin click on the photo, it shows that the photo is not found.
+
+   -  User media_root to handle the media files.
+
+-  We can make photos be uploaded into the server path.
+
+-  Set the path.
+
+config/settings.py
+
+```py
+MEDIA_ROOT = os.path.join(BASE_DIR, "uploads")
+```
+
+-  Change the model.ImageField()
+
+rooms/models.py
+
+```py
+file = models.ImageField(upload_to="room_photos")
+
+```
+
+-  Since the stored file is not for public, use MEDIA_URL to handle the media served.
+
+   -  This is telling Django to go to this URL when they are trying to handle or serve any media requests.
+
+-  Now, the URL seems complicated because of the relative paths.
+
+config/settings.py
+
+```py
+MEDIA_URL = "/media/"
+
+```
+
+**WARNING: Please note that it is NOT a good practice to save files in the servers.**
+
+-  you rather save in the seperate file storage because the server - production environment, they tend to create replica would might result in replicating the private data.
+
+   -  store in Amazon S3 instead.
+
+-  Whenever you are importing the setting in the config, we do not import the file but you import the mirror of the file.
+
+config/settings.py
+
+```py
+from django.conf import settings
+from django.conf.urls.static import static
+
+# If DEBUG is true, which indicate you are in the development, you will get the files from the local server.
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+```
+
+_static_: it helps us serve the static file.
+
+-  After you implement the codes, you will see the URL that is without relative URL.
+   -  We connect the URL with the folder.
+   -  Later, we will change this path the the Amazon Storage.
+   -  We do not even want the DB in our server. We need a seperate DB.
+
+## 7.4 Photo Admin
+
+-  Create get_thumbnail.
+
+-  obj.file has many properties like field, file, height, url, width, and others.
+   -  use obj.file.width and obj.file.height etc.
+
+```py
+    list_display = ("__str__", "get_thumbnail")
+
+    def get_thumbnail(self, obj):
+        return mark_safe(f'<img width="50px" src="{obj.file.url}" />')
+
+    get_thumbnail.short_description = "Thumbnail"
+
+```
+
+## 7.5 raw_id and inline Admin
+
+-  raw_id_fields give opportunity to look at the foreign key in a better way.
+-  if you click on the host, it takes you to the small winodw that shows a list of hosts.
+
+-  Rooms have photosets. Room > Photo > Add photo is easy.
+
+-  Use inlineModelAdmin to put admin inside a different admin.
+
+-  With inlineModelAdmin, Django creates blue fields, caption, File, Delete options to upload photos. Since the relationship is created between the room and the photos. The room knows where to store the file.
+
+## 7.6 Python super()
+
+-  Need to intersect save() method.
+-  We need to intercept the fields after the user SAVE this data. We have to retrieve the fields in the middle and format accordingly.
+-  To do this, we have to understand what super() is in OOP.
+   -  Dog -- inherit --> puppy
+   -  if
+      **With super(), we can extend the method of a parent class.**
+
+## 7.6 Python super()
+
+-  DB documentation Model has everything about the models and methods.
+-  Django admin and model both have save admin.
+-  When you save the model from anywhere, the save technique is going to be used because it has to check the format of fields before saving.
+-  save_model(self, request, obj, form, change)
+   -  all the properties are what you can print and modify.
+   -  these give more control to admins.
+-  For example, if there are 5 admins and 1 does not save, all the admins wanted to notify for the saving. you can but send_mail() notification on the save_model class.
+
+```py
+# Make the first letter of the city field capitalized.
+def save(self, *args, **kwargs):
+    self.city = str.capitalize(self.city)
+    super().save(*args, **kwargs)
+
+```
+
+# 8.0 Costom Commands and Seeding
+
+-  DB seems empty. Programmers do not want to create dummy variables by clicking.
+-  you can create your own command in python.
+-  We can use django-seed to create fake data as fast as you can.
+
+-  We need to create custom commands because we want to automate putting data to our DB instead of manual clicking.
+
+Creating custom commands:
+
+1. Django has a documentation about creating custom commands. Since Django already has some tools to create custom commands, please read the part that you need.
+2. Go to any apps, create a folder called "management"
+3. Inside the folder "management," create "**init**.py" file and "commands" folder.
+4. If you create .py inside the "commands" folder, you may utilize this commands from python for the project.
+5. In this particular example, "loveyou.py" was used.
+6. Create a baseCommand which is provided by Django to easily create a custom command.
+7. "help" is to explain to users what this command do.
+8. "add_arguments" add arguments that the user can input for a custom command (ex: --time will take integer for the argument called "times".
+9. This argument can be used in handle() function to perform an operation.
+10.   This particular case, Nicolas decided to create an operation that repeats a string "I love you" by argument "times" ("I love you" \* "times")
+11.   In thoery, any operations can be done inside handle() for multi-purposes.
+      room/managements/commands/loveyou.py:
+
+```py
+from django.core.management.base import BaseCommand
+
+
+class Command(BaseCommand):
+
+    help = "This command tells me that he loves me"
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--times", help="How many times do you want me to tell you that I love you?"
+        )
+
+    def handle(self, *args, **options):
+        times = options.get("times")
+        for t in range(0, int(times)):
+            self.stdout.write(self.style.SUCCESS("I love you"))
+```
+
+## 8.1 seed_amenities command
+
+-  seed_amenities interact with the Model amenities and create Amenity objects.
+
+1. seed_amenities have array of dummy variables.
+2. seed_amenities interact with Amenity model in rooms app. (imported)
+3. handle() function will iterate through the amenities array with dummy values and create Amenity objects.
+4. when you run command "python manage.py seed_amenities," 50 Amenity objects gets created instantly.
+5. This is useful because for testing purposes, 50 objects had to be created. Without a custom command "seed_amenities," administrator would have manually created 50 Amenity objects by clicking which could take considerable time.
+   I hope this helps! God bless you all :)
+
+_Please refer to seed_amenities.py for this command_
+seed_amenities:
+
+```py
+from django.core.management.base import BaseCommand
+from rooms.models import Amenity
+
+class Command(BaseCommand):
+
+    help = "This command creates many users"
+
+    def handle(self, *args, **options):
+        amenities = [
+            "Air conditioning",
+            "Alarm Clock",
+            "Balcony",
+            "Bathroom",
+            "Bathtub",
+            "Bed Linen",
+            "Boating",
+            "Cable TV",
+            "Carbon monoxide detectors",
+            "Chairs",
+            "Children Area",
+            "Coffee Maker in Room",
+            "Cooking hob",
+            "Cookware & Kitchen Utensils",
+            "Dishwasher",
+            "Double bed",
+            "En suite bathroom",
+            "Free Parking",
+            "Free Wireless Internet",
+            "Freezer",
+            "Fridge / Freezer",
+            "Golf",
+            "Hair Dryer",
+            "Heating",
+            "Hot tub",
+            "Indoor Pool",
+            "Ironing Board",
+            "Microwave",
+            "Outdoor Pool",
+            "Outdoor Tennis",
+            "Oven",
+            "Queen size bed",
+            "Restaurant",
+            "Shopping Mall",
+            "Shower",
+            "Smoke detectors",
+            "Sofa",
+            "Stereo",
+            "Swimming pool",
+            "Toilet",
+            "Towels",
+            "TV",
+        ]
+        for a in amenities:
+            Amenity.objects.create(name=a)
+        self.stdout.write(self.style.SUCCESS("Amenities created!"))
+
+```
+
+## 8.2 seed_everything and seed_users.
+
+1. Create dummy objects for facilities model
+2. Download Django-seed
+3. Add to the config/settings as a third-party apps.
+4.

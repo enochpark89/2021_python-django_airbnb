@@ -5,6 +5,7 @@ from . import models
 @admin.register(models.Review)
 class ReviewAdmin(admin.ModelAdmin):
 
-    """ Review Admin Definition """
+    """Review Admin Definition"""
 
-    pass
+    # "__str__"shows the variable string as it is.
+    list_display = ("__str__", "rating_average")
