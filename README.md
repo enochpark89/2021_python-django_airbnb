@@ -1205,4 +1205,254 @@ class Command(BaseCommand):
 1. Create dummy objects for facilities model
 2. Download Django-seed
 3. Add to the config/settings as a third-party apps.
-4.
+4. import and use it to fill out random fields for testing.
+
+seed_user.py:
+
+```py
+class Command(BaseCommand):
+
+    help = "This command creates amenities"
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--number", default=2, type=int, help="How many users you want to create"
+        )
+
+    def handle(self, *args, **options):
+        number = options.get("number")
+        seeder = Seed.seeder()
+        seeder.add_entity(User, number, {"is_staff": False, "is_superuser": False})
+        seeder.execute()
+        self.stdout.write(self.style.SUCCESS(f"{number} users created!"))
+```
+
+## 8.2 seed_rooms
+
+-  seeder doesn't help with the forign key.
+-  you have to get the users from the User model for th Host field.
+-  Django_seed uses faker. It creates fake data.
+
+```py
+
+def handle(self, *args, **options):
+    number = options.get("number")
+    seeder = Seed.seeder()
+    all_users = user_models.User.objects.all()
+    room_types = room_models.RoomType.objects.all()
+    seeder.add_entity(
+        room_models.Room,
+        number,
+        {
+            "name": lambda x: seeder.faker.address(),
+            "host": lambda x: random.choice(all_users),
+            "room_type": lambda x: random.choice(room_types),
+            "guests": lambda x: random.randint(1, 20),
+            "price": lambda x: random.randint(1, 300),
+            "beds": lambda x: random.randint(1, 5),
+            "bedrooms": lambda x: random.randint(1, 5),
+            "baths": lambda x: random.randint(1, 5),
+        },
+    )
+```
+
+## 8.3 reviws
+
+-  similar as beofre
+
+## 8.4 seed_list
+
+-  when you are trying to add multiple-to-multiple values, you have to use flatten as below
+
+```py
+created = seeder.execute()
+        cleaned = flatten(list(created.values()))
+        for pk in cleaned:
+            list_model = list_models.List.objects.get(pk=pk)
+            to_add = rooms[random.randint(0, 5) : random.randint(6, 30)]
+            list_model.rooms.add(*to_add)
+```
+
+## 8.5 seed_reservation
+
+-  For the conversation, there is no point faking the message because this is the one that only logged in user can have.
+
+-  Reservation is similar as the others that we've done before. _Please check seed_reservation.py for detail._
+
+# 9.0 Views and URLs.
+
+-  URL is a path, and view is a way you answer the request.
+
+1. On rooms/views, create a function called all_rooms(request):
+   pass.
+
+rooms/views.py
+
+```py
+def all_rooms(request):
+    pass
+```
+
+2. On config/url, import the views from the room, and create urlpatterns as below:
+   config/url.py
+
+```py
+from django.contrib import admin
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+
+urlpatterns = [
+    path("", include("core.urls", namespace="core")),
+    path("admin/", admin.site.urls),
+]
+
+
+if settings.DEBUG:
+```
+
+3. To prevent url.py getting too big, it is good idea to divide url codes into different loctions.
+
+-  all the url that starts with /rooms > room app
+-  /users > users app.
+-  All the others, put them in core.
+
+4. Manually create url.py inside the core app and update as below:
+
+```py
+from django.urls import path
+from rooms import views as room_views
+
+# app needs to be specified because Django is going to complain.
+app_name = "core"
+
+urlpatterns = [path("", room_views.all_rooms, name="home")]
+```
+
+# 9.1 HttpResponse and Render
+
+-  _How does the views work?_
+-  Go to a view, you are making an HttpRequest and this has to be responded with HttpResponse.
+
+-  If we do not return the HTTP request, we will get an error message and the user's browser will be waiting and pending.
+
+-  HTTP request is valuable because we can check the userLoggedIn, Form, PW, ID, information etc.
+
+-  If we print() the request, we notice that the request is WSGIRequest.
+
+-  print(vars(request)) will show all the methods and properties inside the request.
+
+-  if we do not have a request, we cannot respond.
+
+-  returning a response could be simple as below
+
+```
+return HttpResponse(content="hello")
+```
+
+-  However, if you want to return HTML element, you can user render() function as below:
+
+```py
+    return render(request, "all_rooms")
+```
+
+-  Though you can send the content by the HTML tags, we are not going to do this because it is too elementary and doesn't look good on the code and the page. Instead, we can return the HTML template as a whole to display to the user.
+
+# 9.2 Django Templates
+
+-  Though we responded with HTTP respond, we do not want to respond with HTTP respond every time.
+-  We rather use templates.
+
+1. Create a folder named templates.
+2. Create an all_rooms.html file under templates folder.
+3. Let Django know where to look for the templates.
+4. config/settings.py
+   under TEMPLATES var, add below:
+
+```py
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
+```
+
+5. We can send many variables along with the template as below
+   rooms/views.py:
+
+```py
+def all_rooms(request):
+    now = datetime.now()
+    hungry = True
+    return render(request, "all_rooms.html", context={"now": now, "hungry": hungry})
+```
+
+6. For the HTML file, you can use the variables that was sent along with the HTTP response as below:
+
+```html
+<h1>Hello!!</h1>
+
+<h4>The time right now is: {{now}}</h4>
+
+<h6>{% if hungry %}I'm hungry{% else %}i'm okay{% endif %}</h6>
+```
+
+-  The curly bracket and percentage "{%  %} to use the python code and logics
+-  The double curly brackets to use the variables sent from HTTP response.
+
+7. Extend templates from other models.
+
+-  you can get rooms from the Django DB.
+-  import the models and use in views.py
+
+```py
+from django.shortcuts import render
+from . import models
+
+# Create your views here.
+def all_rooms(request):
+    all_rooms = models.Room.objects.all()
+    return render(request, "rooms/home.html", context={"potato": all_rooms})
+
+```
+
+-  To display all the room.name you do below on the home template.
+   home.html
+
+```html
+{% extends "base.html" %} {% for room in potato %}
+<h1>{{room.name}} / ${{room.price}}</h1>
+{% endfor %}
+```
+
+8. Create base.html under rooms folder to reduce repetition.
+
+-  blocks are way that children template can put info in the parent template.
+
+base.html
+
+```html
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+</head>
+<body>
+{% include "partials/header.html" %}
+
+{% block content %}{% endblock %}
+
+{% include "partials/footer.html" %}
+</body>
+</html>
+```
+
+home.html
+
+```html
+{% extends "base.html" %} {% block page_name %} Home {% endblock page_name %} {%
+block content %} {% for room in potato %}
+<h1>{{room.name}} / ${{room.price}}</h1>
+{% endfor %} {% endblock content %}
+```
+
+-  They are connected by extending so you can use each other's parts. In the same way, you can create both footer and header.
+
+_Please refer to templates/partials/footer.html and header.html for detail_
+
+-  We are not suppose to show all the objects to the users because it gives too much burden on DB. Therefore, we show 10 information at a time.
