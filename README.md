@@ -1456,3 +1456,249 @@ block content %} {% for room in potato %}
 _Please refer to templates/partials/footer.html and header.html for detail_
 
 -  We are not suppose to show all the objects to the users because it gives too much burden on DB. Therefore, we show 10 information at a time.
+
+# 10 HomeView
+
+-  Since there are many objects showing, we will make it show only 10 at a time. There are three ways of doing it:
+
+1. 100% manual with python.
+2. Little help from Django.
+3. Make a view with no code.
+
+-  When you research, people only teach shortcuts. If you are too exposed to shorcuts, you will not know how exactly Django works on the backend.
+
+# 10.1 Pagination with Limit and Offset
+
+-  The approach we can take is to take the object.all() query and get 10 each objects using [0:10]. When the page loads, we have to increment the numbers by 10.
+
+```py
+    return render(request, "rooms/home.html", context={"potato": all_rooms}[0:10])
+```
+
+-  For the pages, we change change the url to display a new page each time an user click next pagination button.
+   -  page is navigated with the "localhost/?page=<number>" format
+-  Query dictionary has get() function. (ex: requests.GET.get()) - with this function, it will read where the user is in different URL page.
+   rooms/views.py
+
+```py
+from django.shortcuts import render
+from . import models
+
+def all_rooms(request):
+
+    page = int(request.GET.get("page", 1))
+    page_size = 10
+    limit = page_size * page
+    offset = limit - page_size
+    all_rooms = models.Room.objects.all()[offset:limit]
+    return render(request, "rooms/home.html", {"potato": all_rooms})
+
+```
+
+-  Two errors:
+   1. Empty page error.
+   2. The page doesn't exist.
+
+# 10.2 Pages List Navigation
+
+-  Fix two errors suggested:
+
+1. If there is no page returned, it will resolve in an error. In order to avoid this error, we can set the default value of a page as below:
+
+views.py
+
+```py
+page = request.GET.get("page", 1)
+page = int(page or 1)
+```
+
+2. Display the page on the bottom of the page.
+
+home.html
+
+```py
+<h5> Page {{page}} of {{page_count}}</h5>
+```
+
+3. Create a page navigation links on the bottom that shows all pages to navigate.
+
+-  Assuming that the page_range variable was rendered from views.py, use below:
+   -  Basic logic:
+
+home.html
+
+```py
+    {% for page in page_range %}
+        <a href="?page={{page}}">{{page}}</a>
+    {% endfor %}
+```
+
+# 10.3 Next Previous Page Navigation
+
+-  Instead of doing list to present pages, we are going to change to _Previous_ and _Next_ buttons.
+-  With a Django function template filter and tags, you can easily create Previous and Next buttons.
+-  Make sure to set a limit so that uses can't go more than the maximum pages. (ex: ?page={{page|add:-1}})
+
+rooms/home.html
+
+```html
+<h5>
+   {% if page is not 1 %}
+   <a href="?page={{page|add:-1}}">Previous</a>
+   {% endif %} Page {{page}} of {{page_count}} {% if not page == page_count %}
+   <a href="?page={{page|add:1}}">Next</a>
+   {% endif %}
+</h5>
+```
+
+-  finished room/view.py
+
+```py
+from django.shortcuts import render
+from . import models
+from math import ceil
+
+# Create your views here.
+def all_rooms(request):
+
+    page = request.GET.get("page", 1)
+    page = int(page or 1)
+    page_size = 10
+    # limit of how many objects are displayed.
+    limit = page_size * page
+    offset = limit - page_size
+    # This limit and offset is designed to make limit = limit-10 so that it will only display 10 objects at a time.
+    all_rooms = models.Room.objects.all()[offset:limit]
+    page_count = ceil(models.Room.objects.count() / page_size)
+    return render(
+        request,
+        "rooms/home.html",
+        {
+            "potato": all_rooms,
+            "page": page,
+            "page_count": page_count,
+            "page_range": range(1, page_count),
+        },
+    )
+
+```
+
+# 10.4 Django Paginator
+
+-  Django always try to take repetitive/menial tasks and help developers.
+-  Django has a library called paginator.
+
+Steps:
+
+1. Import paginator from Django.core.paginator.
+2. Use paginator to get limited number of objects at a time.
+   rooms/views.py:
+
+```py
+# Paginator will get 10 room_lists from the Room models.
+paginator = Paginator(room_list, 10)
+rooms = paginator.get_page(page)
+```
+
+3. Render rooms objects to the home.html so that all the method within the rooms can be used.
+
+rooms/views.py with Pagination
+
+```py
+from math import ceil
+from django.shortcuts import render
+from django.core.paginator import Paginator
+from . import models
+
+
+# Create your views here.
+def all_rooms(request):
+
+    page = request.GET.get("page")
+    room_list = models.Room.objects.all()
+    # Paginator will get 10 room_lists from the Room models.
+    paginator = Paginator(room_list, 10)
+    rooms = paginator.get_page(page)
+    return render(request, "rooms/home.html", {"rooms": rooms})
+
+```
+
+```html
+{% extends "base.html" %} {% block page_name %} Home {% endblock page_name %} {%
+block content %} {% for room in rooms.object_list %}
+<h1>{{room.name}} / ${{room.price}}</h1>
+{% endfor %}
+
+<h5>
+   {% if rooms.has_previous %}
+   <a href="?page={{rooms.number|add:-1}}">Previous</a>
+   {% endif %} Page {{rooms.number}} of {{rooms.paginator.num_pages}} {% if
+   rooms.has_next %}
+   <a href="?page={{rooms.number|add:1}}">Next</a>
+   {% endif %}
+</h5>
+
+{% endblock content %}
+```
+
+-  notice rooms.paginator.num_pages give the total number of pages retrieved from the models. Since the maximum pages is specified, it will do the calculation of its own to show the total number of pages possible.
+-  There are many others like invalid_pages, methods, page.has_pages etcs.
+
+# 10.5 Reviews, get_pages, and page
+
+_Recap:_
+
+1. Created a room_list
+2. Created a Paginator that takes in two arguments
+   a. list of objects
+   b. number of items in a page.
+3. We have two methods _get_page_ and _page_.
+   -  get_page returns a page object.
+   -  .page() does a similar things
+   -  page objects have many methods and attributes such as has_next, has_previous, has_other_pages, etc.
+   -  attributes: .pagination - it has a reference to the father.
+4. However, if we change to display the previous and next page with this function _page.previous_page_number_ and _page.next_page_number_, then the error will show up if there is no next or previous page available.
+
+5. Often times, hacker wants to put a wierd variable to the page or fields.
+   _orphans: list of elements that are not big as the page._
+
+-  you can set the orphan arguments.
+
+6. Set the orphan to 5 (_how many organs do you want to hide?_). Then, the past page will contain 15 elements or objects.
+
+7. int(page()) to protect the field from a wrong type.
+8. In conclusion, get_page has less control but many premade featueres but page has more controls but less premade features.
+
+-  We have to fix the error when there is an empty page but this is the final views.py.
+
+```py
+{% extends "base.html" %}
+{% block page_name %}
+    Home
+{% endblock page_name %}
+{% block content %}
+
+    {% for room in page.object_list  %}
+        <h1>{{room.name}} / ${{room.price}}</h1>
+    {% endfor %}
+
+    <h5>
+    {% if page.has_previous %}
+        <a href="?page={{page.previous_page_number}}">Previous</a>
+    {% endif %}
+
+    Page {{page.number}} of {{page.paginator.num_pages}}
+
+    {% if page.has_next  %}
+        <a href="?page={{page.next_page_number}}">Next</a>
+    {% endif %}
+
+    </h5>
+
+<!-- pagination by numbers of pages.
+    {% for page in page_range %}
+        <a href="?page={{page}}">{{page}}</a>
+    {% endfor %} -->
+
+{% endblock content %}
+```
