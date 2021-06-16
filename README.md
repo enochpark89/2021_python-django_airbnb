@@ -1702,3 +1702,391 @@ _Recap:_
 
 {% endblock content %}
 ```
+
+# 10.6 Handling Exceptions
+
+-  When the user puts a page number that is not available on the url, we can redirect users to home.
+-  Python is really good with exceptions.
+   _Tip: construct your error handler as if error happens try A, B, C rather than make a specific error handler for a specific situation._
+
+Final update on rooms/views:
+
+```py
+from django.shortcuts import render, redirect
+from django.core.paginator import Paginator, EmptyPage
+from . import models
+
+
+# Create your views here.
+def all_rooms(request):
+    page = request.GET.get("page", 1)
+    room_list = models.Room.objects.all()
+    paginator = Paginator(room_list, 10, orphans=5)
+    # Paginator will get 10 room_lists from the Room models.
+    try:
+        rooms = paginator.page(int(page))
+        return render(request, "rooms/home.html", {"page": rooms})
+    except EmptyPage:
+        return redirect("/")
+```
+
+# 10.7 Class Based Views
+
+-  **list view:**
+   -  comes from a class > class based view - abstract.
+   -  A page representing list of objects.
+   -  Using list view, with no programming, it does the job of making paginations.
+
+1. Import ListView from django.views.generic
+
+   -  path() only takes an url and a function.
+   -  Since ListView has a method, as_view(), that turns into a fucntion.
+
+_Tip: Use ccbv.co.uk to explore ListView methods easily._
+
+2. With premade functions or methods, you can create pagination and ordering as below:
+
+rooms/view.py
+
+```py
+from django.views.generic import ListView
+from . import models
+
+
+class HomeView(ListView):
+
+    """HomeView Definition"""
+
+    model = models.Room
+    paginate_by = 10
+    paginate_orphans = 5
+    ordering = "created"
+
+```
+
+-  you have to change the home.html to templates/rooms/room_list.html in order to use the ListView functions.
+
+3. Alternative List View.
+
+-  Some people believe that this is too magical, and the logic of the code should be easily readable.
+-  There are on-going debates between functions or classes.
+-  We should be able to choose wisely and flexibily depending on projects that we use.
+-  The basic rule of thumb:
+   a. listing something - use inheritance - ListView
+   b. Complicateed form with filtering and login form - use functionbased views.
+-  all of them have ListView > get_context_data. > super.context_data.
+
+views.py
+
+```py
+    paginate_by = 10
+    paginate_orphans = 5
+    ordering = "created"
+    context_object_name = "rooms"
+```
+
+templates/rooms/room_list.html
+
+```py
+
+{% block content %}
+
+    {{now}}
+
+    {% for room in rooms  %}
+        <h1>{{room.name}} / ${{room.price}}</h1>
+    {% endfor %}
+
+```
+
+# 11.0 Detail View
+
+Two things to learn about the URL:
+
+1. Django path package allows you to have variables on the path.
+
+```py
+urlpatterns = [path("<int:pk>", views.room_detail, name="detail")]
+```
+
+2. Django's url can be displayed as below to access the Detail view.
+
+```py
+    {% for room in rooms  %}
+    <h3>
+        # This part leads to the /rooms/detail URL path.
+        <a href="{% url "rooms:detail" room.pk %}">
+            {{room.name}} / ${{room.price}}
+        </a>
+    </h3>
+    {% endfor %}
+```
+
+# 11.1 get_absolute_url
+
+-  In order to view how each app is being displayed on the web, we can use get_absolute_url. This creates a button on the website to "view on website."
+
+models.py:
+
+```py
+def get_absolute_url(self):
+    return "/potato"
+```
+
+-  _reverse_ is a function that takes the name of the url and returns the actual url.
+
+```py
+def get_absolute_url(self):
+    return reverse("room:detail", kwargs={"pk": self.pk})
+```
+
+# 11.2 room_detail FBV finished
+
+-  detail needs to provide information about the room.
+
+1. Modify the rooms/models.py to have _from django.urls import reverse._
+2. Modify the rooms/views.py as below:
+   rooms/views.py:
+
+```py
+
+def room_detail(request, pk):
+    try:
+        room = models.Room.objects.get(pk=pk)
+        return render(request, "rooms/detail.html", {"room": room})
+    except models.Room.DoesNotExist:
+        return redirect(reverse("core:home"))
+
+```
+
+3. Modify detail.html to show details of the room.
+
+```html
+{% extends "base.html" %} {% block page_name %} Home {% endblock page_name %} {%
+block content %}
+<div>
+   <h1>{{room.name}}</h1>
+   <h3>{{room.description}}</h3>
+</div>
+<div>
+   <h2>
+      By: {{room.host.username}} {% if room.host.superhost %} (superhost) {%
+      endif %}
+   </h2>
+   <h3>Amenities</h3>
+   <ul>
+      {% for a in room.amenities.all %}
+      <li>{{a}}</li>
+      {% endfor %}
+   </ul>
+   <h3>Facilities</h3>
+   <ul>
+      {% for a in room.facilities.all %}
+      <li>{{a}}</li>
+      {% endfor %}
+   </ul>
+   <h3>House Rules</h3>
+   <ul>
+      {% for a in room.house_rules.all %}
+      <li>{{a}}</li>
+      {% endfor %}
+   </ul>
+</div>
+{% endblock %}
+```
+
+4. If there is no room information, redirect users to the home site.
+   _reverse is recommended in this process._
+
+# 11.3 HTTP 404() code.
+
+-  404 page is to let the browser understand the outcome of a request.
+
+1. Import HTTP 404 package.
+
+rooms/views.py:
+
+```py
+from django.views.generic import ListView
+from django.http import Http404
+from django.shortcuts import render
+from . import models
+
+        room = models.Room.objects.get(pk=pk)
+        return render(request, "rooms/detail.html", {"room": room})
+    except models.Room.DoesNotExist:
+        # Raise an error instead of returning.
+        raise Http404()
+```
+
+2. Create a HTTP 404 template.
+
+   404.html:
+
+```py
+{% extends "base.html" %}
+
+{% block content %}
+
+    <h1>Sorry! The page is not found.</h1>
+
+
+{% endblock content %}
+```
+
+3. Update config/settings.py DEBUG value to False, and ALLOWED HOSTS value to all("\*")
+
+```py
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = False
+
+ALLOWED_HOSTS = "*"
+```
+
+-  In conclusion, if the user enters a room number that does not exist, it will raise an 404 error.
+
+# 11.4 Using DetailView CBV
+
+-  We created a function-based view. We are going to change to class-based view. Please decide for yourself which one is better.
+
+1. Update rooms/views.py:
+
+```py
+from django.views.generic import ListView, DetailView
+from . import models
+# Class-based View
+class RoomDetail(DetailView):
+
+    """RoomDetail Definition"""
+
+    model = models.Room
+
+```
+
+2. Update urlpatterns value in rooms/urls.py to use RoomDetail.as_view().
+
+rooms/url.py
+
+```py
+urlpatterns = [path("<int:pk>", views.RoomDetail.as_view(), name="detail")]
+```
+
+3. In config/settings.py, change DEBUG to True, and ALLOWED_HOSTS to [].
+
+-  Everything works the same as the functional-based View.
+   Summary:
+   a. On the View Template, you can use the object name or the app name.
+   b. Django by default is going to look for the URL element pk as it is stated in urlpattern, and View class RoomDetail.
+   c. In a nutshell, it is a communication from URLS.py > Views.py > View Template.
+
+# 12 Search View
+
+# 13 Login form
+
+-  The login forms and autentication need to be created, but it is easy with Django because it comes with features that help this process.
+
+# 13.3 Validate data
+
+-  Added the initial value for convenience; added render to render a page after the login.
+
+1. Use clean_email() to clean, validate
+
+-  if you just return the clean_email, the value will not be returned.
+
+-  Validate email and password and must return values.
+
+forms.py:
+
+```py
+class LoginForm(forms.Form):
+
+    email = forms.EmailField()
+    password = forms.CharField(widget=forms.PasswordInput)
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        # Check for the existing user. Otherwise, raise an error.
+        try:
+            models.User.objects.get(username=email)
+            return email
+        except models.User.DoesNotExist:
+            raise forms.ValidationError("User does not exist")
+
+```
+
+# 23 UPDATE ROOM, CREATE ROOM, ROOM PHOTOS (This needs to be updated to different chapter numbers)
+
+# 23.0 Update Room View
+
+-  With UpdateView, just by having the pk arguments and templates, you can create a update form easily.
+
+-  The problem is insecurity. If you go to another room, people can enter this edit url directly instead of using the buttons to edit. This is not good for security.
+
+# 23.1 Room Photos pt.1
+
+-  UPDATE view takes the pk in the url and takes the model and try to find one. It does not verify the ownership of that.
+-  Please use get_object to verify the editability.
+   a. Takes pk from the url. If yes, filter by pk.
+   b. Try to get the queryset.get() room, if not there, it is going to create 404 page.
+   c. We need override so that if the user is the owner, we return the room. If not, we return HTTP 404.
+
+```
+room = super().get_object(queryset=queryset).
+print(room.host.pk, request.user.pk)
+# returns the room host and request user. We need to compare them.
+```
+
+-  Django is not good for interface.
+
+1. Edit photos link can be created in url.py.
+2. Edit and photos are manually handled. There is Edit-photos tab.
+3. Get the photos and the room.
+
+-  Change the views.py > Create a class RoomPhotosView > takes two argument about details and photos > Use get object to display the information in the arguments > Users are seeing the photos.
+-  class RoomPhotosView(user_mixins.LoggedInOnlyView, View).
+
+4. In the templates, we create the space where we display photos and details.
+5. Create a template called room_photos.html
+6. Connect a template in url.py with the class.
+7. In room_edit.html, create a button to edit photos.
+8. In the template, you can decide how users can edit/show photo.
+
+-  Container that holds the photos.
+
+9. You can incorporate the values imported from other models by doing below:
+
+Room Photos:
+
+```py
+{% extends "base.html" %}
+
+{% block page_title %}
+    {{room.name}}'s Photos
+{% endblock page_title %}
+
+{% block search-bar %}
+{% endblock search-bar %}
+
+{% block content %}
+
+    <div class="container mx-auto my-10 flex flex-col">
+
+        {% for photo in room.photos.all  %}
+            <div class="mb-5 border p-6 border-gray-400 flex justify-between">
+                <div class="flex items-start">
+                    <img src="{{photo.file.url}}" class="w-32 h-32" />
+                    <span class="ml-5 text-xl">{{photo.caption}}</span>
+                </div>
+                <div class="flex flex-col w-1/5">
+                    <a class="btn-link mb-5 bg-teal-500" href="#">Edit</a>
+                    <a class="btn-link bg-red-600" href="#">Delete</a>
+                </div>
+            </div>
+        {% endfor %}
+
+    </div>
+{% endblock content %}
+# Show pictures, texts, borders, paddings, buttons, there are some skills needed to create a sizeable, a good buttons and displays.
+```
+
+10.
