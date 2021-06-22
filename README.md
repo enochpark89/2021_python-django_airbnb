@@ -1,5 +1,7 @@
 # Airbnb Clone
 
+# Table of Contents:
+
 -  This is to copy similar functional website as Airbnb with Django and Tailwind CSS etc.
 
 # Programming languages/framework used
@@ -9,21 +11,21 @@
 # Software Requirement
 
 -  [x] Python 3.0
--  [] Django
+-  [x] Django
 -  [x] pipenv
 
 _Please look at the documentation on how to install these on your particular OS system._
 
-# Progress journal
+# Progress Journal
 
--  If you are serious about the career as a Django developer, we recommend using Pycharm community or professional version.
--  **Jetbrains**: The company who developed Pycharm. They have IDE for many programming languages.
+-  If you are serious about the career as a Django developer, we recommend using a pycharm community or a professional version.
+   **Jetbrains**: The company who developed Pycharm. They have IDE for many programming languages.
 -  Django vs Flask:
-   -  Python: mininalistic (Flask, Pyramid), simple code; lots of manual work; invent wheels
-   -  Django: massive framework; comes with many utilities; Use other ppl's work; no need to reinvent wheels.
+   **Python**: mininalistic (Flask, Pyramid), simple code; lots of manual work; invent wheels
+   **Django**: a massive framework; comes with many utilities; Use other ppl's work; no need to reinvent a wheel.
 -  If you use Django template, you will save alot of time building a website.
--  A web app that requires many user interactions should use React.
--  Sometimes, you do not need React to build a website. It might be better in some cases to use Django.
+   **A rule of thumb:**: A web app that requires many user interactions should use React.
+-  You do not always need to use React to build a website. It might be better in some cases to use Django.
 -  Pip installs everything globally. So we install something like **pipenv** that install packages within your environment only. The problem with installing globally is that when there is a version update, your code might break. Therefore, it is better for you to create a bubble or a backup just incase the code breaks.
 -  Tell pipenv to create an environment with Python 3 (_pipenv --three_)
 
@@ -45,35 +47,31 @@ _Please look at the documentation on how to install these on your particular OS 
 ## 1.3 Test the Bubble
 
 -  Though the tutorial is telling people to use django-admin startproject, there is a better way to form an application.
--  Run _django-admin startproject config_
--  We have two folders (config, manage.py) > Take it ouside the config folder and delete the config folder that holds two files (config and manage.py).
--  Linter: looks at your code and tries to foresee the errors that might come up in the future.
-   -  Flask 8 and pylint
--  Formatter
-   -  Black: install Black - recommend which codes to format.
--  PEP8: A style guide that is recommended for a clean code. DOS AND DON'T (_Please read the documentation_)
+
+1. Run _django-admin startproject config_
+2. We have two folders (config, manage.py) > Take it ouside the config folder and delete the config folder that holds two files (config and manage.py).
+
+**Additional packages**: - Linter: looks at your code and tries to foresee the errors that might come up in the future. - Flask 8 and pylint - Formatter - Black: install Black - recommend which codes to format. - PEP8: A style guide that is recommended for a clean code.
+_For do DOs AND DON'T, (Please read the documentation)_
 
 ## 1.4 First look at Django
 
--  **init** everytime you make a file you need to have **init.py**.
--  settings.py: everything is set up in the beginning to make the application that Django gives us. such as admin, auth, contenttypes, sessions, messages, static files, and middlewares, WSGI, DB.
--  Django comes with files and comments. These comments are very valuable because it explains about the pre-setting that is created.
--  Django documentation: Django documentations are available to all in the setting file. It shows the source, many of the things are done for us such as common password check and everything. look for things that you don't understand. Then, you just need to click on it. IF you have a question on anything, you can just click to see the detailed documentation.
+**init.py**: A starting point; init.py is needed to Everytime you make a file you need to have **init.py**.
+**settings.py**: Everything is set up in the beginning to make the application that Django gives us. (Admin, Auth, ContentTypes, Sessions, Messages, Static Files, and Middlewares, WSGI, and DB.)
+_Tip: Django comes with files and comments. These comments are very valuable because it explains about the pre-setting that is created._
+**Django documentation**: Django documentations are available to all in the setting file. - CTRL click to see the detail of the files. - Look at comments to understand what files do.
 
--  **Manage.py**: have many commands. If you hover your mouse on, click command or control and you can enter into the related file.
+**Manage.py**: have many commands. If you hover your mouse on, click command or control and you can enter into the related file.
 
 -  Run _python manage.py runserver_ to start the server. The default localhost is 8000. (http://localhost:8000/)
 
-   -  If you save any of the files, it will update the changed information.
+   -  Afterwards, if you save any of the files, it will update the changed information.
    -  "/admin" shows an administrator page. It requires a login.
 
--  Run _python manage.py migrate_ > Then, run the server.
--  The Django administration will show. If you DO NOT have the user account, it is not going to allow access.
-
-_Always check whether you are running the server_
+-  Run _python manage.py migrate_ > Chan ges on the DB is adjusted
+   _Tip: Always check whether you are running the server_
 
 -  To create a super user, you run _python manage.py createsuperuser_
--  You can create an admin account in like 2 seconds, and work on the administrative things. Everything is ready for you.
 
 ## 1.5 Django Migrations
 
@@ -1979,9 +1977,322 @@ urlpatterns = [path("<int:pk>", views.RoomDetail.as_view(), name="detail")]
    b. Django by default is going to look for the URL element pk as it is stated in urlpattern, and View class RoomDetail.
    c. In a nutshell, it is a communication from URLS.py > Views.py > View Template.
 
-# 12 Search View
+# 12.0 Search View
 
-# 13 Login form
+-  Search View
+
+1. create a def search() in views.py.
+
+rooms/views.py:
+
+```py
+def search(request):
+    city = request.GET.get("city")
+    city = str.capitalize(city)
+    return render(request, "rooms/search.html", {"city": city})
+```
+
+2. Create a search.html template that shows the result of a search.
+   search.html:
+
+```py
+{% extends "base.html" %}
+
+{% block page_title %}
+    Search
+{% endblock page_title %}
+
+{% block content %}
+
+    <h2>Search!</h2>
+
+    <h4>Searching by {{city}}</h4>
+
+{% endblock content %}
+```
+
+3. Update urls.py to route the user to a /search page.
+
+```py
+path("search/", views.search, name="search"),
+```
+
+4. Update navbar to include to search form.
+
+template/partials/nav.html.
+
+```html
+<form method="get" action="{% url "rooms:search" %}">
+    <input name="city" placeholder="Search by City" />
+</form>
+```
+
+5. Show the search result when users submit a form.
+
+# 12.1 Start the form
+
+1. Modify the forms so that the searchbar from the base.html wouldn't show on the search result page.
+
+-  USE {% block %} to accomplish this
+
+template/base.html
+
+```py
+<header>
+    {% include "partials/nav.html" %}
+    {% block search-bar %}
+    <form method="get" action="{% url "rooms:search" %}">
+        <input name="city" placeholder="Search By City" />
+    </form>
+    {% endblock search-bar %}
+</header>
+```
+
+templates/rooms/search.html:
+
+```py
+# Add below block since this is included in base.html.
+{% block search-bar %}
+{% endblock search-bar %}
+```
+
+2. Add more fields to search in View.
+
+rooms/views.py:
+
+```py
+# Add room_types field so that the users can search.
+room_types = models.RoomType.objects.all()
+return render(
+    request,
+    "rooms/search.html",
+    {"city": city, "countries": countries, "room_types": room_types},
+)
+```
+
+-  As a result, when an user searches, it will autopopulate the keyword that they search with more options.
+-  Please put value so that the keyword will be shown on the URL as an user searches.
+
+## 12.2 Select Choices
+
+-  Update the View to add more choices.
+
+rooms/views.py:
+
+```py
+def search(request):
+    city = request.GET.get("city", "Anywhere")
+    city = str.capitalize(city)
+    country = request.GET.get("country", "KR")
+    room_type = request.GET.get("country", 0)
+    room_types = models.RoomType.objects.all()
+
+    # What we get from a form
+    form = {"city": city, "room_type": room_type, "country": country}
+
+    # What we get from a DB.
+    options = {"countries": countries, "room_types": room_types}
+
+    return render(
+        request,
+        "rooms/search.html",
+        {**form, **choices},
+    )
+
+```
+
+-  Update the selected choices to appear on a form as below:
+
+```html
+<form method="get" action="{% url "rooms:search" %}">
+    <div>
+        <label for="city">City</label>
+        <input value="{{city}}" id="city" name="city" placeholder="Search By City" />
+    </div>
+
+    <div>
+        <label for="country">Country</label>
+        <select id="country" name="country" >
+            {% for country in countries  %}
+                <option value="{{country.code}}" {% if country.code == selected_country %}selected{% endif %}>{{country.name}}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div>
+        <label for="room_type">Room Type</label>
+        <select id="room_type" name="room_type" >
+            <option value="0" {% if seleted_room_type == 0 %}selected{% endif %}> Any kind</option>
+            {% for room_type in room_types  %}
+                <option value="{{room_type.pk}}" {% if selected_room_type == room_type.pk %}selected{% endif %}>{{room_type.name}}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button>Search</button>
+```
+
+## 12.3 Amenities and Facilities Form
+
+-  Adds more forms to the Search.
+-  Add more inputs in search.html.
+
+_Please refer to the Search.html and rooms/views for more detail._
+
+## 12.4 Finish the form
+
+-  The problem showed that the .get does not the get the list of selected amenities and facilities.
+-  Instead, we can use **get_list** function to get the list.
+-  sluggify makes everything into the text.
+-  Add instant and super_host fields bolean to check.
+
+## 12.5 Filtering
+
+-  Use the field LOOKUP functionality in Django to help filter the search results.
+-  There are conditionals with LOOKUP because sometimes, the search result needs to search by comparing the exisitng data. ( ex: price higher or lesser than this.)
+
+## 12.6 Use Django form to make lives easier.
+
+-  If you use Django form, it is easy implementation without having to write a long manual code.
+
+-  Thanks to Django **The Forms API**!!
+
+-  Logic: Forms.py created > Views.py imports fields from forms.py > template shows what was stated in the form.
+
+forms.py:
+
+```py
+from django import forms
+from . import models
+class SearchForm(forms.Form):
+
+    city = forms.CharField(initial="Anywhere")
+    price = forms.IntegerField(required=False)
+    room_type = forms.ModelChoiceField(queryset=models.RoomType.objects.all())
+```
+
+views.py:
+
+```py
+def search(request):
+    form = forms.SearchForm()
+    return render(request, "rooms/search.html", {"form": form})
+
+```
+
+search.html:
+
+```html
+    <h2>Search!</h2>
+
+    <form method="get" action="{% url "rooms:search" %}">
+                {{form.as_p}}
+        <button>Search</button>
+    </form>
+    <h3>Results</h3>
+    {% for room in rooms %}
+        <h3>{{room.name}}</h3>
+    {% endfor %}
+{% endblock content %}
+```
+
+## 12.7 Forms extended fields
+
+-  If you want to show more fields on the search form, you can just add the fields in the forms.py. However, please note that fields must exist in Model.
+
+-  Django uses help_text. (ex: If you state the help_text under the Model fields, it will show users on the input fields.)
+
+## 12.8 Make the Form remember the keywords.
+
+-  The form is going back with the list of errors by default.
+-  Once we give a form data, it will automatically tries to validate the data. (bounded form > validate data)
+-  In order to prevent errors, you make the required property false on the form.
+
+_Benefit of a form_
+
+1. Creates HTML really quickly
+2. Clean the data.
+
+-  urls.py should point to the SearchView.
+-  views.py should use the form.cleaned_data to validate data with the name SearchView.
+
+```py
+class SearchView(View):
+
+    """SearchView Definition"""
+
+    def get(self, request):
+
+        country = request.GET.get("country")
+
+        if country:
+
+            form = forms.SearchForm(request.GET)
+
+            if form.is_valid():
+
+                city = form.cleaned_data.get("city")
+                country = form.cleaned_data.get("country")
+                room_type = form.cleaned_data.get("room_type")
+                price = form.cleaned_data.get("price")
+                guests = form.cleaned_data.get("guests")
+                bedrooms = form.cleaned_data.get("bedrooms")
+                beds = form.cleaned_data.get("beds")
+                baths = form.cleaned_data.get("baths")
+                instant_book = form.cleaned_data.get("instant_book")
+                superhost = form.cleaned_data.get("superhost")
+                amenities = form.cleaned_data.get("amenities")
+                facilities = form.cleaned_data.get("facilities")
+
+                filter_args = {}
+
+                if city != "Anywhere":
+                    filter_args["city__startswith"] = city
+
+                filter_args["country"] = country
+
+                if room_type is not None:
+                    filter_args["room_type"] = room_type
+
+                if price is not None:
+                    filter_args["price__lte"] = price
+
+                if guests is not None:
+                    filter_args["guests__gte"] = guests
+
+                if bedrooms is not None:
+                    filter_args["bedrooms__gte"] = bedrooms
+
+                if beds is not None:
+                    filter_args["beds__gte"] = beds
+
+                if baths is not None:
+                    filter_args["baths__gte"] = baths
+
+                if instant_book is True:
+                    filter_args["instant_book"] = True
+
+                if superhost is True:
+                    filter_args["host__superhost"] = True
+
+                for amenity in amenities:
+                    filter_args["amenities"] = amenity
+
+                for facility in facilities:
+                    filter_args["facilities"] = facility
+
+                rooms = models.Room.objects.filter(**filter_args)
+
+        else:
+
+            form = forms.SearchForm()
+
+        return render(request, "rooms/search.html", {"form": form, "rooms": rooms})
+
+```
+
+## 12.9
+
+# 13.0 Login form
 
 -  The login forms and autentication need to be created, but it is easy with Django because it comes with features that help this process.
 
@@ -2013,6 +2324,193 @@ class LoginForm(forms.Form):
             raise forms.ValidationError("User does not exist")
 
 ```
+
+2. Use clean_password() to clean the data.
+
+-  Get the user and use check_password() method
+
+```py
+
+# Clean password.
+password = self.cleaned_data.get("password")
+
+try:
+# Find user; check passwords
+user = models.User.objects.get(email=email)
+if user.check_password(password):
+    return self.cleaned_data
+else:
+    self.add_error("password", forms.ValidationError("Password is wrong"))
+except models.User.DoesNotExist:
+self.add_error("email", forms.ValidationError("User does not exist"))
+
+```
+
+3. Change the clean() instead of cleanEmail and clean both password and email.
+
+_Always need to return clean_data as 'self.clean_data'_
+
+# 13.4 Authenticate Logins
+
+-  using Django library autenticate and login, we can authenticate and check login information.
+
+1. In a View, import authenticate, login, logout libraries.
+
+2. Use authenticate to authenticate both username and passwords.
+
+```py
+user = authenticate(request, username=email, password=password)
+```
+
+3. If authenticated, login the users
+
+```py
+if user is not None:
+    login(request, user)
+    return redirect(reverse("core:home"))
+```
+
+4. Use a logout library to logout the user as below:
+   view.py
+
+```py
+def log_out(request):
+    logout(request)
+    return redirect(reverse("core:home"))
+```
+
+5. Include urlpatterns to have the logout path.
+
+urls.py
+
+```py
+urlpatterns = [
+path("logout", views.log_out, name="logout"),
+]
+```
+
+6. Include the option to login and logout on the template
+
+-  Django uses a **context Processor**.
+-  Takes a cookie, look for the user and put the user in the template.
+-  is a Python Function that takes one argument and returns a library.
+-  in a nutshell, the user is found when they login and make the login text to logout.
+
+nav.html:
+
+```py
+
+    {% if user.is_authenticated %}
+        <li><a href="{% url "users:logout" %}">Log out</a></li>
+    {% else %}
+        <li><a href="{% url "users:login" %}">Log in</a></li>
+    {% endif %}
+
+```
+
+7. Create logout function in view.py
+
+```py
+def log_out(request):
+    logout(request)
+    return redirect(reverse("core:home"))
+
+```
+
+# 13.5 An easier way to authenticate and create login forms.
+
+-  Use loginView that creates a login form and takes care of the authentication.
+
+-  Use logoutView to let the user logout.
+
+-  _Please read a Django documentation_
+
+# 14.0 Sign up form
+
+-  Sign up form is required for new users.
+
+1. Create an anchor element in the template so that users are directed to the form page.
+
+2. On urls.py, add thew SignUpview to urlpatterns.
+
+urls.py:
+
+```py
+    path("sigup", views.SignUpView.as_view(), name="signup"),
+```
+
+3. Add SingUpView class in views.py
+
+```py
+class SignUpView(FormView):
+
+    template_name = "users/signup.html"
+    form_class = forms.SignUpForm
+    success_url = reverse_lazy("core:home")
+    initial = {"first_name": "Nicoas", "last_name": "Serr", "email": "itn@las.com"}
+```
+
+4. Inside the SignUpView, create form_class that takes the form template from the forms.py.
+
+forms.py
+
+```py
+class SignUpForm(forms.Form):
+
+    # Field specifications:
+    first_name = forms.CharField(max_length=80)
+    last_name = forms.CharField(max_length=80)
+    email = forms.EmailField()
+    password = forms.CharField(widget=forms.PasswordInput)
+    password1 = forms.CharField(widget=forms.PasswordInput, label="Confirm Password")
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        try:
+            models.User.objects.get(email=email)
+            raise forms.ValidationError("User already exists with that email")
+        except models.User.DoesNotExist:
+            return email
+
+    def clean_password1(self):
+        password = self.cleaned_data.get("password")
+        password1 = self.cleaned_data.get("password1")
+        if password != password1:
+            raise forms.ValidationError("Password confirmation does not match")
+        else:
+            return password
+```
+
+5. Create Save(self) function under the form that saves the data.
+
+-  We need to encrypt the password.
+
+6. Update the view.py that validate the data and authenticate the login account.
+
+-  create form_valid(self, form) that validates and authenticate the user login form.
+
+-  ModelForm basically connects Model and Form so that we do not have to create different fields manually.
+-  it validates the uniqueness of the data.
+
+_Please read about the ModelForm from the Django website._
+
+-  If you use ModelForm, the form.py gets simplified.
+
+   -  No clean_email(self)
+   -  save takes arguments, and keyward arguments.
+
+-  form_valid function from Views.py gets simplier.
+
+```py
+def form_valid(self, form):
+    form.save()
+```
+
+-  "commit = false" means do not save on the db.
+
+# 20.0 Make it all Beatiful
+
+- Use TailwindCSS to save some time with the styling. 
 
 # 23 UPDATE ROOM, CREATE ROOM, ROOM PHOTOS (This needs to be updated to different chapter numbers)
 
