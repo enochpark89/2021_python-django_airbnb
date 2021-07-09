@@ -1,15 +1,18 @@
 {% extends "base.html" %}
-
 {% block page_title %}
     Log In
 {% endblock page_title %}
+{% block search-bar %}
+{% endblock search-bar %}
 
 {% block content %}
-<form method="POST" action="{% url "users:login" %}">
-    <!-- input will be hidden and protected. token confirms that the POST request came from this website -->
-    {% csrf_token %}
-    <!-- Create a form-->
-    {{form.as_p}}
-    <button>Login</button>
-</form>
+
+    Hello!
+
+
+    <form method="POST" action="{% url "users:login" %}">
+        {% csrf_token %}
+        {{form.as_p}}
+        <button>Login</button>
+    </form>
 {% endblock content %} 

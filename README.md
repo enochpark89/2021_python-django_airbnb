@@ -2508,9 +2508,205 @@ def form_valid(self, form):
 
 -  "commit = false" means do not save on the db.
 
+# 15.0 Verify Email
+
+-  Need to create an email server to send an email because email providers will put the regular server to a spam to protect people from spams.
+
+1. Create an account in mailgun.com
+2. Look at Domain and SMTP credentails.
+3. According to Django Documentation, HTTP host and port need to be specified.
+4. Include the email configuration under config/settings.
+
+config/settings.py:
+
+```py
+# Email Configuration
+
+EMAIL_HOST = "smtp.mailgun.org"
+EMAIL_PORT = "587"
+EMAIL_HOST_USER = ""
+EMAIL_HOST_PASSWORD = ""
+```
+
+# 15.1 Dotenv
+
+-  You do not want to save the passwords in the source code.
+
+1. Install Django-dotenv.
+
+-  include .env file > include mailgun username and passwords in there.
+
+2. Create .env file in the workding directory.
+
+-  .env should include both the username and passwords.
+
+3. Install Django-dotenv.
+
+-  Run pipenv install
+
+4. Import dotenv in the manage.py
+
+5. Add a new values (email_confirmed and email_secret) in a model.
+
+users/models.py
+
+```py
+email_confirmed = models.BooleanField(default=False)
+email_secret = models.CharField(max_length=120, default="", blank=True)
+
+def verify_email(self):
+    pass
+```
+
+-  make migrations.
+-  Need to write a logic that uses the email_confirmed and email_secret to authenticate and then send emails.
+
+# 15.2 Verify Email
+
+-  Finish up the def verify_email() to work on the logic.
+
+-  you have uuid.uuid4() which gives a unique id for an email. you can make that into a hex by using uuid.uuid4().hex
+
+1. Import uuid, settings from django.conf, send_mail from django.core.mail.
+
+2. Finish the verify_email() function
+
+models.py:
+
+```py
+def verify_email(self):
+    if self.email_verified is False:
+        secret = uuid.uuid4().hex[:20]
+        self.email_secret = secret
+        send_mail(
+            "Verify Airbnb Account",
+            f"Verify account, this is your secret: {secret}",
+            settings.EMAIL_FROM,
+            [self.email],
+            fail_silently=False,
+        )
+    return
+```
+
+3. Set up Email_from to create a no-reply email
+
+config/settings.py
+
+```py
+EMAIL_FROM = "enoch@sandbox2b6f7df484464ec08cd86345f44e3eee.mailgun.org"
+
+```
+
+4. Use send_mail to send email to people. _Please check the format of the send_mail package_
+
+# 19.0 Tailwind CSS
+
+-  Tailwind CSS has many CSS properties as a class.
+-  Tailwind is good because you do not have to know much about CSS.
+-  You don't have to waste time creating a new class name.
+-  For example, Marketing tag is combination of many classes.
+-  We can create our own button and CSS using the tailwind @apply.
+-  @apply needs to be used many times to
+-  _Preflight_: Tailwind comes with many of the colors and styles already.
+-  Tailwind does not dictate your design. It is mostly help.
+-  _Tailwind CSS_ intellisense on VSC will give recommendations and show you what classes in Tailwind means.
+
+## 19.1 Tailwind CSS
+
+-  Since the browser does not understand the post CSS, we need to install gulp to make the browser smart enough to understand.
+
+_Tip:Please read the Tailwind documentation to install._
+
+-  Install gulp by running below code > package.json and node_modules populate.
+
+1. Run below:
+
+```ps
+npm install gulp gulp-postcss gulp-sass gulp-csso node-sass --save-dev
+```
+
+2. Set up Tailwind CSS.
+
+-  Add node_modules/ to gitignore.
+
+-  Install Tailwind CSS with the below code:
+
+```powershell
+npm install tailwindcss --save-dev
+```
+
+3. Set up Gulp.
+
+a. Create a new file called gulpfile.js
+b. Copy and Paste below code
+
+```js
+const gulp = require("gulp");
+
+const css = () => {
+   const postCSS = require("gulp-postcss");
+   const sass = require("gulp-sass");
+   const minify = require("gulp-csso");
+   sass.compiler = require("node-sass");
+   return gulp
+      .src("assets/scss/styles.scss")
+      .pipe(sass().on("error", sass.logError))
+      .pipe(postCSS([require("tailwindcss"), require("autoprefixer")]))
+      .pipe(minify())
+      .pipe(gulp.dest("static/css"));
+};
+exports.default = css;
+```
+
+4. Install autoprefixer
+5. Create a script that runs the CSS.
+
+In a nutshell, Gulp is going to translate from SCSS to CSS.
+
+-  If you run _npm run css_, the updated css will be created under static/css folder. With this, we can implement on the base.html template for use.
+
+## 19.2 Static Files on Django.
+
+-  In order to allow users to access the static file, we have to update the config/settings.py
+
+1. Add below to config/settings.py
+
+```py
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+```
+
+2. import the CSS in the template/base.html
+
+```html
+<link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+```
+
 # 20.0 Make it all Beatiful
 
-- Use TailwindCSS to save some time with the styling. 
+-  Use TailwindCSS to save some time with the styling.
+
+# 20.1 Sizes in Tailwind
+
+-  _Sizes:_ there are percentages and rem.
+-  em is a measurement.
+-  rem is a root em. It cares about the closest font size. It cares about the rootsize and bases its measurement by the root.
+
+# 20.2 Header
+
+-  Container is like a box
+
+   -  size with the max-width.
+   -  w is width; h is height.
+   -  m is margin
+   -  ml is margin left
+   -  there are colors too
+   -  p is padding.
+
+-  _Please refer to the Tailwind CSS documentation for detail_
+
+## 20.3 Extending Tailwind CSS
+
+-  You can customize the class by putting the new properties under tailwind.config.js.
 
 # 23 UPDATE ROOM, CREATE ROOM, ROOM PHOTOS (This needs to be updated to different chapter numbers)
 
